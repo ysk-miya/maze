@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Timeアタック</title>
+    <style>
+        body {
+            background-image: url(../white.webp);
+            background-size: cover;
+            font-family: "Century Gothic";
+            font-size: 16px;
+        }
+
+        #container {
+            margin: 20px auto;
+        }
+
+        #mycanvas {
+            text-align: center;
+            background: white;
+        }
+
+        .btn {
+            font-size: 26px;
+            margin: auto;
+            width: 100px;
+            padding: 5px;
+            background: #e62f8b;
+            color: #FFFFFF;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .myButton {
+            font-size: 18px;
+        }
+
+        .btn:hover {
+            opacity: 0.7;
+        }
+
+        .timer {
+            float: left;
+            display: flex;
+        }
+
+        .main {
+            margin-left: 30px;
+            display: flex;
+            display: inline-block;
+        }
+
+        p {
+            color: #e62f8b;
+            font-size: 20px;
+            margin-bottom: 0;
+            margin-top: 0;
+            /* visibility: hidden; */
+        }
+
+        .start {
+            float: left;
+        }
+
+        .goal {
+            float: right;
+        }
+    </style>
+</head>
+
+<body>
+
+    <button class="btn" id="level10" data-level="10" onclick="start()">Start</button>
+
+    <div id='container'>
+        <div class="timer">
+            <h1 id="timerLabel">00:00:00</h1>
+            <!-- <input type="button" class="myButton" onclick="start()" value="START" id="startBtn"> -->
+            <!-- <input type="button" class="myButton" onclick="stop()" value="STOP"> -->
+            <input type="button" class="myButton" onclick="reset()" value="RESET">
+        </div>
+        <div class="main">
+            <h4>※赤印は動かないので " 追視 " です💦</h4>
+            <div class="start">
+                <p>start</p>
+            </div>
+            <div><canvas width="100" height="100" id="mycanvas"></canvas></div>
+            <div>
+                <p class="goal">goal</p>
+            </div>
+        </div>
+    </div>
+
+
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js "></script>
+
+    <script>
+        $('.btn').click(function () {
+            alert("ゴールまで行けたら [ Enter ] を押してください")
+            alert("では、スタートします！")
+
+            let map = [];
+
+            // Canvasで描画
+            //ここのcolとrowの数字を増やせば何度はどんどん高くなる
+            let col = 111; // 奇数でないと道が出来ない
+            let row = 65; //画面に収まるよう少し横長で。
+
+            for (let x = 0; x < col; x++) { //マップを全部０で埋める
+                map[x] = [];
+                for (let y = 0; y < row; y++) {
+                    map[x][y] = 0;
+                }
+            }
+
+            for (let x = 1; x < col; x += 2) {//一つ飛びに壁を作る((１)の部分),x＋＝２は１、３、５・・・
+                for (let y = 1; y < row; y += 2) {
+                    map[x][y] = 1;
+                }
+            }
+
+            let points = [//倒す際の配列０〜３
+                [0, -1],//上に倒す
+                [0, 1],//下
+                [1, 0],//右
+                [-1, 0]//＊＊左
+            ]
+
+            function rand(n) {
+                return Math.floor(Math.random() * (n + 1));
+            }
+
+            for (let x = 1; x < col; x += 2) {
+                for (let y = 1; y < row; y += 2) {
+                    do {
+                        if (x === 1) {
+                            // 上下左右に倒す
+                            var r = points[rand(3)];
+                        } else {
+                            // 左以外に倒す
+                            var r = points[rand(2)];
+                        }
+                    } while (map[x + r[0]][y + r[1]] === 1);//倒した先が棒の場合にはやり直したいのでdo,while文
+                    map[x + r[0]][y + r[1]] = 1;
+                }
+            }
+
+            let startX = 0;//スタートの座標
+            let startY = 0;
+
+            let goalX = col - 1;//ゴールの座標
+            let goalY = row - 1;
+
+            let wallSize = 10;
+            let wallColor = '#3cb371';
+            let routeColor = '#ff0000';
+
+
+            const canvas = $('#mycanvas')[0];
+            if (!canvas || !canvas.getContext) {
+                return false;
+            }
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = (col + 2) * wallSize;//左右とも壁の分(＋２)
+            canvas.height = (row + 2) * wallSize;//上下も同様
+
+            // 上下の壁
+            for (let x = 0; x < col + 2; x++) {
+                drawWall(x, 0);
+                drawWall(x, row + 1);
+            }
+
+            // 左右の壁
+            for (let y = 0; y < row + 2; y++) {
+                drawWall(0, y);
+                drawWall(col + 1, y);
+            }
+
+            // 迷路の内部
+            for (let x = 0; x < col; x++) {
+                for (let y = 0; y < row; y++) {
+                    if (map[x][y] === 1) {
+                        drawWall(x + 1, y + 1);//両方とも壁の分(＋１)を考慮
+                    }
+                    if ((x === startX && y === startY) || (x === goalX && y === goalY)) {// ||もしくは
+                        drawRoute(x + 1, y + 1);//＋１は壁を考慮
+                    }
+                }
+            }
+
+            // 壁を描画
+            function drawWall(x, y) {
+                ctx.fillStyle = wallColor;//壁の色
+                drawRect(x, y);
+            }
+
+            function drawRoute(x, y) {
+                ctx.fillStyle = routeColor;
+                drawRect(x, y);
+            }
+
+            function drawRect(x, y) {
+                ctx.fillRect(
+                    x * wallSize,
+                    y * wallSize,
+                    wallSize,//壁の幅
+                    wallSize);
+            }
+
+
+        });
+
+
+        //ストップウォッチ
+
+        let status = 0; // 0:停止中 1:動作中
+        let time = 0;
+        let startBtn = document.getElementById("level10");
+        let timerLabel = document.getElementById('timerLabel');
+        // STARTボタン
+        function start() {
+            // 動作中にする
+            status = 1;
+            // スタートボタンを押せないようにする
+            startBtn.disabled = true;
+            timer();
+        }
+        // STOPボタン
+        function stop() {
+            // 停止中にする
+            status = 0;
+            // スタートボタンを押せるようにする
+            startBtn.disabled = false;
+        }
+        // RESETボタン
+        function reset() {
+            // 停止中にする
+            status = 0;
+            // タイムを0に戻す
+            time = 0;
+            // タイマーラベルをリセット
+            timerLabel.innerHTML = '00:00:00';
+            // スタートボタンを押せるようにする
+            startBtn.disabled = false;
+        }
+        function timer() {
+            // ステータスが動作中の場合のみ実行
+            if (status == 1) {
+                setTimeout(function () {
+                    time++;
+                    // 分・秒・ミリ秒を計算
+                    let min = Math.floor(time / 100 / 60);
+                    let sec = Math.floor(time / 100);
+                    let mSec = time % 100;
+                    // 分が１桁の場合は、先頭に０をつける
+                    if (min < 10) min = "0" + min;
+                    // 秒が６０秒以上の場合　例）89秒→29秒にする
+                    if (sec >= 60) sec = sec % 60;
+                    // 秒が１桁の場合は、先頭に０をつける
+                    if (sec < 10) sec = "0" + sec;
+
+                    // ミリ秒が１桁の場合は、先頭に０をつける
+                    if (mSec < 10) mSec = "0" + mSec;
+                    // タイマーラベルを更新
+                    timerLabel.innerHTML = min + ":" + sec + ":" + mSec;
+                    // 再びtimer()を呼び出す
+                    timer();
+                }, 10);
+            }
+        }
+
+        document.onkeydown = function (event) {
+            if (event) {
+                if (event.keyCode == 13 || event.which == 13) { //Enterのキーコードが１３
+                    if (status == 1) {
+                        stop();
+                    } else if (status == 0) {
+                        start();
+                    }
+                }
+            }
+        };
+
+        //resetボタンで更新
+        $("#reset").on("click", function () {
+            location.reload();
+        });
+
+    </script>
+
+</body>
+
+</html>

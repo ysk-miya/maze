@@ -1,0 +1,65 @@
+ body {
+            background-image: url(../white.webp);
+            background-size: cover;
+            font-family: "Century Gothic";
+            font-size: 16px;
+        }
+
+        #container {
+            margin: 20px auto;
+            display: flex;
+            
+        }
+
+        #mycanvas {
+            text-align: center;
+            background: white;
+        }
+
+        a{
+            font-size: 20px;
+        }
+        a:hover{
+          background-color: #e62f8b;
+          color: white;
+        }
+        .btn {
+            font-size: 18px;
+            margin:auto;
+            width: 100px;
+            padding: 5px;
+            background: #e62f8b;
+            color: #FFFFFF;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            opacity: 0.7;
+        }
+
+        .timer{
+            float: left;
+            display: flex;
+        }
+
+    .main{
+        margin-left: 30px;
+        display: inline-block;
+    }
+
+        p{
+            color: black;
+            font-size: 14px;
+            margin-bottom: 0;
+             margin-top: 0;
+             margin-left: 20px;
+            /* visibility: hidden; */
+        }
+
+        .start{
+         float: left;
+        }
+        .goal{
+        float:right;
+        }

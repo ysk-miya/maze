@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="css/maze.css">
+    <title>迷路(レベル別)</title>
+</head>
+
+<body>
+    <button class="btn" id="level1" data-level="1">レベル1</button>
+    <button class="btn" id="level2" data-level="2">レベル2</button>
+    <button class="btn" id="level3" data-level="3">レベル3</button>
+    <button class="btn" id="level4" data-level="4">レベル4</button>
+    <button class="btn" id="level5" data-level="5">レベル5</button>
+    <button class="btn" id="level6" data-level="6">レベル6</button>
+    <button class="btn" id="level7" data-level="7">レベル7</button>
+    <button class="btn" id="level8" data-level="8">レベル8</button>
+    <button class="btn" id="level9" data-level="9">レベル9</button>
+    <button class="btn" id="level10" data-level="10">レベル10</button>
+
+    <div id='container'>
+        <div class="main">
+            <h4>※赤印は動かないので " 追視 " です💦</h4>
+            <div class="start">
+                <p>start</p>
+            </div>
+            <div><canvas width="100" height="100" id="mycanvas"></canvas></div>
+            <div>
+                <p class="goal">goal</p>
+            </div>
+        </div>
+        <p>マニアックな人用： タイムアタック はこちら→ <a href="css/mazetimer.html">レベル20 タイムアタック</a></p>
+
+    </div>
+
+
+    </div>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js "></script>
+
+    <script>
+
+        const renderMaze = function (col, row) {
+
+            $("#reset").on("click", function () {
+                location.reload();
+            });
+            // 迷路を配列で用意
+
+            /*
+            棒倒し法で行う
+            （１）１つ飛びに壁(棒）を作る
+            （２）１列目の上下左右どちらかに倒す
+            （３）２列目以降の棒を左以外のどれかに倒す
+               0 0 0 0 0     0 0 0 0 0      0 0 0 1 0
+               0 1 0 1 0     1 1 0 1 0      1 1 0 1 0
+               0 0 0 0 0     0 0 0 0 0      0 0 0 0 0
+               0 1 0 1 0     0 1 0 1 0      0 1 0 1 1
+               0 0 0 0 0     0 1 0 0 0      0 1 0 0 0
+            */
+
+            let map = [];
+
+            // Canvasで描画
+
+
+            for (let x = 0; x < col; x++) {//マップを全部０で埋める
+                map[x] = [];
+                for (let y = 0; y < row; y++) {
+                    map[x][y] = 0;
+                }
+            }
+
+            for (let x = 1; x < col; x += 2) {//一つ飛びに壁を作る((１)の部分),x＋＝２は１、３、５・・・
+                for (let y = 1; y < row; y += 2) {
+                    map[x][y] = 1;
+                }
+            }
+
+            let points = [//倒す際の配列０〜３
+                [0, -1],//上に倒す
+                [0, 1],//下
+                [1, 0],//右
+                [-1, 0]//＊＊左
+            ]
+
+            function rand(n) {
+                return Math.floor(Math.random() * (n + 1));
+            }
+
+            for (let x = 1; x < col; x += 2) {
+                for (let y = 1; y < row; y += 2) {
+                    do {
+                        if (x === 1) {
+                            // 上下左右に倒す
+                            var r = points[rand(3)];
+                        } else {
+                            // 左以外に倒す
+                            var r = points[rand(2)];
+                        }
+                    } while (map[x + r[0]][y + r[1]] === 1);//倒した先が棒の場合にはやり直したいのでdo,while文
+                    map[x + r[0]][y + r[1]] = 1;
+                }
+            }
+
+            let startX = 0;//スタートの座標
+            let startY = 0;
+
+            let goalX = col - 1;//ゴールの座標
+            let goalY = row - 1;
+
+            let wallSize = 10;
+            let wallColor = '#3cb371';
+            let routeColor = '#ff0000';
+
+
+            const canvas = $('#mycanvas')[0];
+            if (!canvas || !canvas.getContext) {
+                return false;
+            }
+            const ctx = canvas.getContext('2d');
+
+            canvas.width = (col + 2) * wallSize;//左右とも壁の分(＋２)
+            canvas.height = (row + 2) * wallSize;//上下も同様
+
+            // 上下の壁
+            for (let x = 0; x < col + 2; x++) {
+                drawWall(x, 0);
+                drawWall(x, row + 1);
+            }
+
+            // 左右の壁
+            for (let y = 0; y < row + 2; y++) {
+                drawWall(0, y);
+                drawWall(col + 1, y);
+            }
+
+            // 迷路の内部
+            for (let x = 0; x < col; x++) {
+                for (let y = 0; y < row; y++) {
+                    if (map[x][y] === 1) {
+                        drawWall(x + 1, y + 1);//両方とも壁の分(＋１)を考慮
+                    }
+                    if ((x === startX && y === startY) || (x === goalX && y === goalY)) {// ||もしくは
+                        drawRoute(x + 1, y + 1);//＋１は壁を考慮
+                    }
+                }
+            }
+
+            // 壁を描画
+            function drawWall(x, y) {
+                ctx.fillStyle = wallColor;//壁の色
+                drawRect(x, y);
+            }
+
+            function drawRoute(x, y) {
+                ctx.fillStyle = routeColor;
+                drawRect(x, y);
+            }
+
+            function drawRect(x, y) {
+                ctx.fillRect(
+                    x * wallSize,
+                    y * wallSize,
+                    wallSize,//壁の幅
+                    wallSize);
+            }
+
+
+        };
+
+        //レベルの振り分け。上記全体を関数とし、最上部のcol,rowに代入
+
+        $(function () {
+            $('.btn').click(function () {
+                const n = 6 * $(this).data("level") + 1;
+                renderMaze(n + 10, n);
+            })
+        });
+
+    </script>
+
+</body>
+
+</html>
